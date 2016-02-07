@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GameEngine2048.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,19 +11,39 @@ namespace GameEngine2048
     {
         #region Fields
         
+        /// <summary>
+        /// List of all the moves in the current game
+        /// </summary>
         private List<int[,]> _moves;
 
-        private int[,] _currentMove;
+        /// <summary>
+        /// Current matrix
+        /// </summary>
+        private int[,] _currentMatrix;
 
+        /// <summary>
+        /// Random
+        /// </summary>
         private static Random _random = new Random();
+
+        /// <summary>
+        /// Size of current matrix.
+        /// </summary>
+        private int _size;
 
         #endregion Fields
 
         #region Events
-
+        
+        /// <summary>
+        /// Triggers when there are no more moves that can be applied
+        /// </summary>
         public event EventHandler GameEnded;
 
-        public void OnGameEnded()
+        /// <summary>
+        /// Trigger for GameEnded event
+        /// </summary>
+        private void OnGameEnded()
         {
             if (GameEnded != null)
                 GameEnded(this, EventArgs.Empty);
@@ -37,7 +58,7 @@ namespace GameEngine2048
         /// </summary>
         public GameEngine()
         {
-            this.InitializeGameData();
+            this.InitializeGameData(4);
         }
 
         #endregion Constructors
@@ -65,9 +86,9 @@ namespace GameEngine2048
         /// <returns></returns>
         public int[,] StartGame(int size)
         {
-            InitializeGameData();
-            SetStartingMatrix(size);
-            return _currentMove;
+            InitializeGameData(size);
+            SetStartingMatrix();
+            return _currentMatrix;
         }
 
         /// <summary>
@@ -93,29 +114,70 @@ namespace GameEngine2048
 
         #region Private methods
 
-        private void InitializeGameData()
+
+
+        private void InitializeGameData(int size)
         {
+            this._size = size;
             this._moves = new List<int[,]>();
-            this._currentMove = null;
+            this._currentMatrix = null;
             this.Score = 0;
             this.Moves = 0;
         }
 
-        private void SetStartingMatrix(int size)
+        private void SetStartingMatrix()
         {
-            int[,] newMatrix = new int[size, size];
+            int[,] newMatrix = new int[_size, _size];
             for (int i = 0; i < 2; i++)
             {
-                AddRandomNumber(newMatrix, size);
+                AddRandomNumberOnMatrix(newMatrix);
             }
+
+            this._currentMatrix = newMatrix;
         }
 
-        private void AddRandomNumber(int[,] matrix, int size)
+        private void AddRandomNumberOnMatrix(int[,] matrix)
         {
-            int x = _random.Next(0, size);
-            int y = _random.Next(0, size);
+            Position pos = GetRandomEmptyPosition(matrix);
 
-            matrix[x, y] = 2;
+            matrix[pos.X, pos.Y] = GetRandomNewNumber();
+        }
+
+        private int GetRandomNewNumber()
+        {
+            int newNumber = 2;
+            double randomDouble = _random.NextDouble();
+            if (randomDouble >= 0.75)
+            {
+                newNumber = 4;
+            }
+            return newNumber;
+        }
+
+        private Position GetRandomEmptyPosition(int[,] matrix)
+        {
+            List<Position> allAvailablePositions = GetAvailableSpaces(matrix);
+            int randomIndex = _random.Next(0, allAvailablePositions.Count);
+            return allAvailablePositions[randomIndex];
+        }
+
+        private List<Position> GetAvailableSpaces(int[,] matrix)
+        {
+            List<Position> result = new List<Position>();
+
+            for (int i = 0; i < _size; i++)
+            {
+                for (int j = 0; j < _size; j++)
+                {
+                    if (matrix[i, j] == 0)
+                    {
+                        Position pos = new Position(i, j);
+                        result.Add(pos);
+                    }
+                }
+            }            
+
+            return result;
         }
 
         #endregion Private methods
